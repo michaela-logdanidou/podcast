@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ερωτηματολόγιο μεταπτυχιακής έρευνας</title>
+<meta name="robots" content="noindex">
+<style>
+  body { margin:0; background:#f1f3f4; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#202124; }
+  .card { max-width:520px; margin:48px auto; background:#fff; border-radius:12px; padding:32px 28px; box-shadow:0 1px 4px rgba(0,0,0,.12); text-align:center; }
+  h1 { font-size:22px; margin:0 0 8px; }
+  .sub { margin:0 0 20px; color:#5f6368; font-size:15px; }
+  #msg { font-size:16px; margin:0 0 20px; }
+  #go { display:none; background:#1a73e8; color:#fff; text-decoration:none; padding:12px 22px; border-radius:6px; font-size:16px; }
+  #retry { display:none; background:#fff; color:#1a73e8; border:1px solid #1a73e8; padding:10px 18px; border-radius:6px; font-size:15px; cursor:pointer; }
+  .contact { margin:24px 0 0; color:#5f6368; font-size:13px; }
+  @media (max-width:560px){ .card{ margin:20px 12px; padding:24px 18px; } }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Ερωτηματολόγιο μεταπτυχιακής έρευνας</h1>
+  <p class="sub">ΠΜΣ «Ηλεκτρονικό Επιχειρείν και Ψηφιακό Μάρκετινγκ»<br>Πανεπιστήμιο Δυτικής Μακεδονίας</p>
+  <p id="msg">Σε λίγα δευτερόλεπτα θα μεταφερθείτε στο ερωτηματολόγιο, στις Φόρμες Google.</p>
+  <p><a id="go" href="#">Μετάβαση στο ερωτηματολόγιο</a></p>
+  <p><button id="retry" type="button">Δοκιμάστε ξανά</button></p>
+  <p class="contact">Μιχαέλα Λογδανίδου · michaela.log@gmail.com</p>
+</div>
+<script>
+// Ο σύνδεσμος της εφαρμογής ιστού του ΣΚΡΙΠΤ 2 («Podcast – Σύνδεσμος»). Αλλάζει ΜΟΝΟ αν φτιαχτεί νέα ανάπτυξη (New deployment).
+var API = 'https://script.google.com/macros/s/AKfycbyPX-TQlAbfHxv6rKXlon3Llze5IsY3dNGbseux4PtBv0cN62WKRHUwOy8Hb__sIXB-/exec';
+var KEY = 'podcast_assignment';
+
+function el(id){ return document.getElementById(id); }
+function save(d){ try { localStorage.setItem(KEY, JSON.stringify({ v: d.v, s: d.s })); } catch(e){} }
+function load(){ try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){ return null; } }
+
+function go(d){
+  var a = el('go');
+  a.href = d.url;
+  a.style.display = 'inline-block';
+  el('retry').style.display = 'none';
+  el('msg').textContent = 'Αν η σελίδα δεν αλλάξει σε λίγα δευτερόλεπτα, πατήστε το κουμπί.';
+  window.location.replace(d.url);
+}
+function fail(){
+  el('msg').textContent = 'Κάτι πήγε στραβά με τη σύνδεση. Πατήστε «Δοκιμάστε ξανά». Αν το πρόβλημα συνεχιστεί, επικοινωνήστε μαζί μου.';
+  el('retry').style.display = 'inline-block';
+}
+function call(params){
+  // Χωρίς cookies: δεν μπλέκονται οι λογαριασμοί Google του επισκέπτη.
+  return fetch(API + '?' + params, { method: 'GET', credentials: 'omit', redirect: 'follow' })
+    .then(function(r){ if (!r.ok) throw new Error('http ' + r.status); return r.json(); });
+}
+function assignNew(){
+  return call('action=assign').then(function(d){
+    if (d.v !== 'A' && d.v !== 'B') throw new Error('bad');
+    save(d); go(d);
+  });
+}
+function start(){
+  el('retry').style.display = 'none';
+  el('msg').textContent = 'Σε λίγα δευτερόλεπτα θα μεταφερθείτε στο ερωτηματολόγιο, στις Φόρμες Google.';
+  var saved = load();
+  var p = saved && (saved.v === 'A' || saved.v === 'B')
+    ? call('action=repeat&v=' + encodeURIComponent(saved.v) + '&s=' + encodeURIComponent(saved.s || ''))
+        .then(function(d){ if (d.stale) return assignNew(); go(d); })
+    : assignNew();
+  p.catch(fail);
+}
+el('retry').addEventListener('click', start);
+start();
+</script>
+</body>
+</html>
